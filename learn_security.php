@@ -33,11 +33,14 @@ function wp_learn_enqueue_script() {
 		true
 	);
 	wp_enqueue_script( 'wp-learn-admin' );
+    $ajax_nonce = wp_create_nonce( 'wp_learn_ajax_nonce' );
+
 	wp_localize_script(
 		'wp-learn-admin',
 		'wp_learn_ajax',
 		array(
 			'ajax_url' => admin_url( 'admin-ajax.php' ),
+            'nonce' => $ajax_nonce,
 		)
 	);
 }
@@ -206,31 +209,39 @@ function wp_learn_maybe_process_form()
  * Shortcode to display the form
  */
 add_shortcode( 'wp_learn_form_short_code', 'wp_learn_form_short_code' );
-function wp_learn_form_short_code()
+function wp_learn_form_short_code( $atts )
 {
+    if ( ! isset( $atts['class'] ) ) 
+    {
+        $atts['class'] = 'red';
+    }
+
     ob_start();
     ?>
-    <form method="POST"> 
-        <input type="hidden" name="wp_learn_form" value="wp_learn_form">           
-        <?php 
-            wp_nonce_field( 'wp_learn_form_nonce_action', 'wp_learn_form_nonce_field' );
-        ?>
-        <div>
-            <label for="wp-learn-name">User:</label><br>
-            <input type="text" id="wp-learn-name" name="user" required>
-        </div>
-        <div>
-            <label for="wp-learn-email">Email:</label><br>
-            <input type="email" id="wp-learn-email" name="email" required>
-        </div>
-        <div>
-            <label for="wp-learn-email">Age:</label><br>
-            <input type="number" id="wp-learn-age" name="age" required>
-        </div>
-        <div>
-            <input type="submit" id="submit" name="submit" value="Submit">
-        </div>
-    </form>
+    <div id="wp_learn_form" class="<?php echo esc_attr( $atts['class'] ); ?>">
+        <form method="POST"> 
+            <input type="hidden" name="wp_learn_form" value="wp_learn_form">           
+            <?php 
+                wp_nonce_field( 'wp_learn_form_nonce_action', 'wp_learn_form_nonce_field' );
+            ?>
+            <div>
+                <label for="wp-learn-name">User:</label><br>
+                <input type="text" id="wp-learn-name" name="user" required>
+            </div>
+            <div>
+                <label for="wp-learn-email">Email:</label><br>
+                <input type="email" id="wp-learn-email" name="email" required>
+            </div>
+            <div>
+                <label for="wp-learn-email">Age:</label><br>
+                <input type="number" id="wp-learn-age" name="age" required>
+            </div>
+            <div>
+                <input type="submit" id="submit" name="submit" value="Submit">
+            </div>
+        </form>
+    </div>
+    
     <?php
     
     $form = ob_get_clean();
@@ -243,6 +254,16 @@ function wp_learn_form_short_code()
 add_action( 'wp_ajax_delete_form_submission', 'wp_learn_delete_form_submission' );
 function wp_learn_delete_form_submission()
 {
+    check_ajax_referer( 'wp_learn_ajax_nonce' );
+
+    if ( !current_user_can( 'manage_options' ) ) 
+    {
+        return wp_send_json(array(
+            'success' => false,
+            'message' => 'Unauthorized.'
+        ));
+    }
+    
     $id = (int) $_POST['id'];
     if ($id === 0)
     {
@@ -285,6 +306,8 @@ function wp_learn_delete_form_submission()
 add_action( 'wp_ajax_edit_form_submission', 'wp_learn_edit_form_submission' );
 function wp_learn_edit_form_submission()
 {
+    check_ajax_referer( 'wp_learn_ajax_nonce' );
+
     $id = (int) $_POST['id'];
     if ($id === 0)
     {
@@ -317,6 +340,8 @@ function wp_learn_edit_form_submission()
 add_action( 'wp_ajax_update_form_submission', 'wp_learn_update_form_submission' );
 function wp_learn_update_form_submission()
 {
+    check_ajax_referer( 'wp_learn_ajax_nonce' );
+
     if ( !isset($_POST['identifier']))
     {                
         return;
@@ -328,7 +353,7 @@ function wp_learn_update_form_submission()
         wp_redirect( 'WPLEARN_ERROR_PAGE_SLUG' );
         die();
     }
-
+    
     $id = (int) $_POST['id'];
     if ($id === 0)
     {

@@ -22,6 +22,7 @@ jQuery( document ).ready(
 				jQuery.post(
 					wp_learn_ajax.ajax_url,
 					{
+                        '_ajax_nonce': wp_learn_ajax.nonce,
 						'action': 'delete_form_submission',
 						'id': id,
 					},
@@ -44,6 +45,7 @@ jQuery( document ).ready(
                 jQuery.post(
                     wp_learn_ajax.ajax_url,
                     {
+                        '_ajax_nonce': wp_learn_ajax.nonce,
                         'action': 'edit_form_submission',
                         'id': submissionId,
                     },
@@ -70,6 +72,7 @@ jQuery( document ).ready(
             jQuery.post(
                 wp_learn_ajax.ajax_url,
                 {
+                    '_ajax_nonce': wp_learn_ajax.nonce,
                     'action': 'update_form_submission',
                     'identifier': identifier.value,
                     'hash': hasIdentifier.value,
@@ -81,7 +84,7 @@ jQuery( document ).ready(
                 function (response) {
                     console.log( response );
                     alert( `${response.message}` );
-                    //document.location.reload();
+                    document.location.reload();
                 }
             );
         }
